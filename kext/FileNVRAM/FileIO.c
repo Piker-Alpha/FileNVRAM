@@ -36,15 +36,24 @@ int write_buffer(char* buffer)
 
 			return error;
 		}
-
-		if ((error = vn_rdwr(UIO_WRITE, vp, buffer, length, 0, UIO_SYSSPACE, IO_NOCACHE|IO_NODELOCKED|IO_UNIT, vfs_context_ucred(mCtx), (int *) 0, vfs_context_proc(mCtx))))
+		else
 		{
-			printf("FileNVRAM.kext: Error, vn_rdwr(%s) failed with error %d!\n", FILE_NVRAM_PATH, error);
-		}
+			if ((error = vnode_isreg(vp)) == VREG)
+			{
+				if ((error = vn_rdwr(UIO_WRITE, vp, buffer, length, 0, UIO_SYSSPACE, IO_NOCACHE|IO_NODELOCKED|IO_UNIT, vfs_context_ucred(mCtx), (int *) 0, vfs_context_proc(mCtx))))
+				{
+					printf("FileNVRAM.kext: Error, vn_rdwr(%s) failed with error %d!\n", FILE_NVRAM_PATH, error);
+				}
 	
-		if ((error = vnode_close(vp, FWASWRITTEN, mCtx)))
-		{
-			printf("FileNVRAM.kext: Error, vnode_close(%s) failed with error %d!\n", FILE_NVRAM_PATH, error);
+				if ((error = vnode_close(vp, FWASWRITTEN, mCtx)))
+				{
+					printf("FileNVRAM.kext: Error, vnode_close(%s) failed with error %d!\n", FILE_NVRAM_PATH, error);
+				}
+			}
+			else
+			{
+				printf("FileNVRAM.kext: Error, vnode_isreg(%s) failed with error %d!\n", FILE_NVRAM_PATH, error);
+			}
 		}
 	}
 	else
