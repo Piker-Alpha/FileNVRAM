@@ -1,5 +1,11 @@
 FileNVRAM Release Notes (copied from docs/CHANGES)
 
+========= Version 1.1.5 =======
+* Reformatted source code (Pike R. Alpha, August 2015).
+* Xcode 7 compiler warnings fixed (Pike R. Alpha, August 2015).
+* Secured read/write_buffer routines (Pike R. Alpha, August 2015).
+* Compiler warnings fixed (Pike R. Alpha, August 2015).
+
 ========= Version 1.1.4 =======
 * Add ability to disable FileNVRAM module fomr the command line.
 * Add ability to read NVRAM file from disk if not passed in by bootloader.
