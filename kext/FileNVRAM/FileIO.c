@@ -49,7 +49,7 @@ int write_buffer(char* buffer)
 	}
 	else
 	{
-		printf("AppleIntelInfo.kext: mCtx == NULL!\n");
+		printf("FileNVRAM.kext: mCtx == NULL!\n");
 		error = 0xFFFF;
 	}
 	
