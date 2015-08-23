@@ -1,0 +1,10 @@
+.DS_Store
+.git
+
+xcuserdata
+project.xcworkspace
+
+docs
+module
+test
+Makefile

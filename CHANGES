@@ -1,0 +1,26 @@
+FileNVRAM Release Notes (copied from docs/CHANGES)
+
+========= Version 1.1.4 =======
+* Add ability to disable FileNVRAM module fomr the command line.
+* Add ability to read NVRAM file from disk if not passed in by bootloader.
+* Add ability to configure kext using the nvram command
+* Add ability to save nvram configuration to nvram file.
+* Prepare for public release, source code cleanup.
+* Update macros for passing information between module and kext.
+* Add method to enable logging using an nvram variable.
+
+========= Version 1.1.3 =======
+* Fixed an potential issue where boot-args could get mangled.
+* Fixed an issue where certain legacy variables were saved incorrectly.
+* Fixed an issue where certain nvram variables not writen to the file immediately.
+
+========= Version 1.1.2 =======
+* Fixed a regression in 1.1.1 causing sleep to break.
+
+========= Version 1.1.1 =======
+* Fixed an issue where non-root users could delete variables
+* Fixed a potential issue with sleep
+* Fixed a potential issue with 10.8.3
+* Fixed an issue where boot-args remain after deleted on the command line.
+* Update ROM generation to generate a random value.
+
