@@ -15,6 +15,8 @@
  *			- Xcode 7 compiler warnings fixed (Pike R. Alpha, August 2015).
  *			- Secured read/write_buffer routines (Pike R. Alpha, August 2015).
  *			- Compiler warnings fixed (Pike R. Alpha, August 2015).
+ *			- Moved read_buffer/write_buffer from FileIO.c to FileNVRAM.cpp (Pike R. Alpha, August 2015).
+ *			- Removed FileIO.[c/h] and Support.h (Pike R. Alpha, August 2015).
  */
 
 #include "FileNVRAM.h"
