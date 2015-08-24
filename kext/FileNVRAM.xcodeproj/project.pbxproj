@@ -7,14 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		2795774916A3CFAC0071BE95 /* FileIO.c in Sources */ = {isa = PBXBuildFile; fileRef = 2795774816A3CFAC0071BE95 /* FileIO.c */; };
 		27A0395516A13A7B0043DBF3 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 27A0395316A13A7B0043DBF3 /* InfoPlist.strings */; };
 		27A0395816A13A7B0043DBF3 /* FileNVRAM.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 27A0395716A13A7B0043DBF3 /* FileNVRAM.cpp */; };
-		27A41F0D16B8BBCB00F702AA /* Support.h in Headers */ = {isa = PBXBuildFile; fileRef = 27A41F0B16B8BBCB00F702AA /* Support.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		2795774816A3CFAC0071BE95 /* FileIO.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = FileIO.c; sourceTree = "<group>"; };
 		27A0394B16A13A7B0043DBF3 /* FileNVRAM.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FileNVRAM.kext; sourceTree = BUILT_PRODUCTS_DIR; };
 		27A0394F16A13A7B0043DBF3 /* Kernel.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Kernel.framework; path = System/Library/Frameworks/Kernel.framework; sourceTree = SDKROOT; };
 		27A0395216A13A7B0043DBF3 /* FileNVRAM-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "FileNVRAM-Info.plist"; sourceTree = "<group>"; };
@@ -23,8 +20,6 @@
 		27A0395716A13A7B0043DBF3 /* FileNVRAM.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FileNVRAM.cpp; sourceTree = "<group>"; };
 		27A0395916A13A7B0043DBF3 /* FileNVRAM-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "FileNVRAM-Prefix.pch"; sourceTree = "<group>"; };
 		27A41F0A16B8BBCB00F702AA /* Support.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Support.cpp; sourceTree = "<group>"; };
-		27A41F0B16B8BBCB00F702AA /* Support.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Support.h; sourceTree = "<group>"; };
-		5D262C9316A4E61F008EFE0D /* FileIO.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FileIO.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -74,12 +69,9 @@
 		27A0395016A13A7B0043DBF3 /* FileNVRAM */ = {
 			isa = PBXGroup;
 			children = (
-				5D262C9316A4E61F008EFE0D /* FileIO.h */,
 				27A0395616A13A7B0043DBF3 /* FileNVRAM.h */,
-				2795774816A3CFAC0071BE95 /* FileIO.c */,
 				27A0395716A13A7B0043DBF3 /* FileNVRAM.cpp */,
 				27A41F0A16B8BBCB00F702AA /* Support.cpp */,
-				27A41F0B16B8BBCB00F702AA /* Support.h */,
 				27A0395116A13A7B0043DBF3 /* Supporting Files */,
 			);
 			path = FileNVRAM;
@@ -102,7 +94,6 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				27A41F0D16B8BBCB00F702AA /* Support.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -181,7 +172,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				27A0395816A13A7B0043DBF3 /* FileNVRAM.cpp in Sources */,
-				2795774916A3CFAC0071BE95 /* FileIO.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
