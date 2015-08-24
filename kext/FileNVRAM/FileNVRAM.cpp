@@ -15,15 +15,15 @@
  *			- Xcode 7 compiler warnings fixed (Pike R. Alpha, August 2015).
  *			- Secured read/write_buffer routines (Pike R. Alpha, August 2015).
  *			- Compiler warnings fixed (Pike R. Alpha, August 2015).
+ *			- Moved read_buffer/write_buffer from FileIO.c to FileNVRAM.cpp (Pike R. Alpha, August 2015).
+ *			- Removed FileIO.[c/h] and Support.h (Pike R. Alpha, August 2015).
  */
-
 
 #include "FileNVRAM.h"
 
-// #include "Support.h"
-
 #include <IOKit/IOUserClient.h>
 #include <libkern/c++/OSUnserialize.h>
+
 /** The cpp file is included here to hide symbol names. **/
 #include "Support.cpp"
 
@@ -71,16 +71,10 @@ bool FileNVRAM::start(IOService *provider)
 	mInitComplete   = false;		// Don't resync anything that's already in the file system.
 	mSafeToSync     = false;		// Don't sync untill later
 
-	// We should be root right now... cache this for later.
-	mCtx            = vfs_context_current();
-
 	// Register Power modes
 	PMinit();
 	registerPowerDriver(this, sPowerStates, sizeof(sPowerStates) / sizeof(IOPMPowerState));
 	provider->joinPMtree(this);
-
-	// set a default file path
-	// setPath(OSString::withCString(NVRAM_PLIST_PATH));
 
 	IORegistryEntry* bootnvram = IORegistryEntry::fromPath(NVRAM_FILE_DT_LOCATION, gIODTPlane);
 	IORegistryEntry* root = IORegistryEntry::fromPath("/", gIODTPlane);
@@ -120,8 +114,8 @@ bool FileNVRAM::start(IOService *provider)
 		}
 	}
 
-	// We don't have initial nvram data from the bootloader, or we couldn't schedule a
-	// timer to read in the nvram file, so start up immediately.
+	// We don't have initial NVRAM data from the bootloader, or we couldn't schedule a
+	// timer to read in /Extra/NVRAM/nvram.plist, so start up immediately.
 	if (earlyInit == true)
 	{
 		mSafeToSync = true;
@@ -483,8 +477,6 @@ void FileNVRAM::doSync(void)
 	outputDict->serialize(s);
 	s->addString(NVRAM_FILE_FOOTER);
 
-	// int error = write_buffer(mFilePath->getCStringNoCopy(), s->text(), s->getLength(), mCtx);
-	// int error = write_buffer(s->text(), s->getLength(), mCtx);
 	int error = write_buffer(s->text());
 
 	if (error)
@@ -847,7 +839,7 @@ bool FileNVRAM::safeToSync(void)
 
 //==============================================================================
 
-IOReturn FileNVRAM::dispatchCommand( OSObject* owner, void* arg0, void* arg1, void* arg2, void* arg3 )
+IOReturn FileNVRAM::dispatchCommand(OSObject* owner, void* arg0, void* arg1, void* arg2, void* arg3)
 {
 	FileNVRAM* self = OSDynamicCast(FileNVRAM, owner);
 
@@ -911,11 +903,11 @@ void FileNVRAM::timeoutOccurred(OSObject *target, IOTimerEventSource* timer)
 				UInt8 mLoggingLevel = self->mLoggingLevel;
 				LOG(NOTICE, "BSD found, syncing\n");
 
-				// TODO: Read out nvram plist and populate device tree
+				// TODO: Read /Extra/NVRAM/nvram.plist and populate the device tree.
 				char* buffer;
 				uint64_t len;
 
-				if (read_buffer(&buffer, &len))
+				if (self->read_buffer(&buffer, &len))
 				{
 					retryCount++;
 					LOG(ERROR, "Unable to read in nvram data at %s\n", self->mFilePath->getCStringNoCopy());
@@ -1040,3 +1032,120 @@ OSObject* FileNVRAM::cast(const OSSymbol* key, OSObject* obj)
 
 	return obj;
 }
+
+//==============================================================================
+
+IOReturn FileNVRAM::write_buffer(char* buffer)
+{
+	IOReturn error = 0;
+
+	int length = (int)strlen(buffer);
+	
+	struct vnode * vp;
+	
+	vfs_context_t ctx = vfs_context_current();
+	
+	if (ctx)
+	{
+		if ((error = vnode_open(FILE_NVRAM_PATH, (O_TRUNC | O_CREAT | FWRITE | O_NOFOLLOW), S_IRUSR | S_IWUSR, VNODE_LOOKUP_NOFOLLOW, &vp, ctx)))
+		{
+			printf("FileNVRAM.kext: Error, vnode_open(%s) failed with error %d!\n", FILE_NVRAM_PATH, error);
+			
+			return error;
+		}
+		else
+		{
+			if ((error = vnode_isreg(vp)) == VREG)
+			{
+				if ((error = vn_rdwr(UIO_WRITE, vp, buffer, length, 0, UIO_SYSSPACE, IO_NOCACHE|IO_NODELOCKED|IO_UNIT, vfs_context_ucred(ctx), (int *) 0, vfs_context_proc(ctx))))
+				{
+					printf("FileNVRAM.kext: Error, vn_rdwr(%s) failed with error %d!\n", FILE_NVRAM_PATH, error);
+				}
+				
+				if ((error = vnode_close(vp, FWASWRITTEN, ctx)))
+				{
+					printf("FileNVRAM.kext: Error, vnode_close(%s) failed with error %d!\n", FILE_NVRAM_PATH, error);
+				}
+			}
+			else
+			{
+				printf("FileNVRAM.kext: Error, vnode_isreg(%s) failed with error %d!\n", FILE_NVRAM_PATH, error);
+			}
+		}
+	}
+	else
+	{
+		printf("FileNVRAM.kext: mCtx == NULL!\n");
+		error = 0xFFFF;
+	}
+	
+	return error;
+}
+
+//==============================================================================
+
+IOReturn FileNVRAM::read_buffer(char** buffer, uint64_t* length)
+{
+	IOReturn error = 0;
+	
+	struct vnode * vp;
+	struct vnode_attr ap;
+	
+	vfs_context_t ctx = vfs_context_current();
+
+	if (ctx)
+	{
+		if ((error = vnode_open(FILE_NVRAM_PATH, (O_RDONLY | FREAD | O_NOFOLLOW), S_IRUSR, VNODE_LOOKUP_NOFOLLOW, &vp, ctx)))
+		{
+			printf("failed opening vnode at path %s, errno %d\n", FILE_NVRAM_PATH, error);
+			
+			return error;
+		}
+		else
+		{
+			if ((error = vnode_isreg(vp)) == VREG)
+			{
+				VATTR_INIT(&ap);
+				VATTR_WANTED(&ap, va_data_size);
+				
+				// Determine size of vnode
+				if ((error = vnode_getattr(vp, &ap, ctx)))
+				{
+					printf("FileNVRAM.kext: Error, failed to determine file size of %s, errno %d.\n", FILE_NVRAM_PATH, error);
+				}
+				else
+				{
+					if (length)
+					{
+						*length = ap.va_data_size;
+					}
+					
+					*buffer = (char *)IOMalloc((size_t)ap.va_data_size);
+					int len = (int)ap.va_data_size;
+					
+					if ((error = vn_rdwr(UIO_READ, vp, *buffer, len, 0, UIO_SYSSPACE, IO_NOCACHE|IO_NODELOCKED|IO_UNIT, vfs_context_ucred(ctx), (int *) 0, vfs_context_proc(ctx))))
+					{
+						printf("FileNVRAM.kext: Error, writing to vnode(%s) failed with error %d!\n", FILE_NVRAM_PATH, error);
+					}
+				}
+				
+				if ((error = vnode_close(vp, 0, ctx)))
+				{
+					printf("FileNVRAM.kext: Error, vnode_close(%s) failed with error %d!\n", FILE_NVRAM_PATH, error);
+				}
+			}
+			else
+			{
+				printf("FileNVRAM.kext: Error, vnode_isreg(%s) failed with error %d!\n", FILE_NVRAM_PATH, error);
+			}
+		}
+	}
+	else
+	{
+		printf("FileNVRAM.kext: mCtx == NULL!\n");
+		error = 0xFFFF;
+	}
+	
+	return error;
+}
+

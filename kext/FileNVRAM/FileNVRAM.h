@@ -15,12 +15,20 @@
  *			- Xcode 7 compiler warnings fixed (Pike R. Alpha, August 2015).
  *			- Secured read/write_buffer routines (Pike R. Alpha, August 2015).
  *			- Compiler warnings fixed (Pike R. Alpha, August 2015).
+ *			- Moved read_buffer/write_buffer from FileIO.c to FileNVRAM.cpp (Pike R. Alpha, August 2015).
+ *			- Removed FileIO.[c/h] and Support.h (Pike R. Alpha, August 2015).
  */
 
 #ifndef FileNVRAM_FileNVRAM_h
 #define FileNVRAM_FileNVRAM_h
 
 #include <sys/proc.h>
+#include <sys/kernel.h>
+#include <sys/vnode.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/fcntl.h>
+#include <libkern/libkern.h>
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
@@ -47,25 +55,26 @@ do {																						\
 } while(0)
 
 #ifndef kIONVRAMDeletePropertyKey
-#define kIONVRAMDeletePropertyKey	"IONVRAM-DELETE-PROPERTY"
+	#define kIONVRAMDeletePropertyKey	"IONVRAM-DELETE-PROPERTY"
 #endif
 #ifndef kIONVRAMSyncNowPropertyKey
-#define kIONVRAMSyncNowPropertyKey	"IONVRAM-SYNCNOW-PROPERTY"
+	#define kIONVRAMSyncNowPropertyKey	"IONVRAM-SYNCNOW-PROPERTY"
 #endif
 #ifndef kIODTNVRAMPanicInfoKey
-#define kIODTNVRAMPanicInfoKey		"aapl,panic-info"
+	#define kIODTNVRAMPanicInfoKey		"aapl,panic-info"
 #endif
 
 #define private public
+
+#include <IOKit/IOLib.h>
 #include <IOKit/IONVRAM.h>
 #include <IOKit/IOPlatformExpert.h>
 #include <IOKit/IOService.h>
 #include <IOKit/IOCommandGate.h>
 #include <IOKit/IOTimerEventSource.h>
 
-#include "FileIO.h"
-
 #define FILE_NVRAM_GUID			"D8F0CCF5-580E-4334-87B6-9FBBB831271D"
+#define FILE_NVRAM_PATH			"/Extra/NVRAM/nvram.plist"
 
 #define NVRAM_ENABLE_LOG		"EnableLogging"
 
@@ -92,53 +101,46 @@ class FileNVRAM : public IODTNVRAM
 	
 public:
 	virtual bool		start(IOService *provider) override;
-	virtual void		stop(IOService *provider) override;
-
+	virtual bool		serializeProperties(OSSerialize *s) const override;
+	virtual bool		setProperty(const OSSymbol *aKey, OSObject *anObject) override;
+	virtual void		removeProperty(const OSSymbol *aKey) override;
 	virtual bool		passiveMatch(OSDictionary *matching, bool changesOK);
+	virtual bool		init(IORegistryEntry *old, const IORegistryPlane *plane) override;
+	virtual bool		safeToSync(void) override;
 
+	virtual void		stop(IOService *provider) override;
 	virtual void		copyEntryProperties(const char* prefix, IORegistryEntry* entry);
 	virtual void		copyUnserialzedData(const char* prefix, OSDictionary* dict);
-
-	virtual IOReturn	syncOFVariables(void) override;
-	virtual bool		init(IORegistryEntry *old, const IORegistryPlane *plane) override;
-
 	virtual void		registerNVRAMController(IONVRAMController *nvram) override;
 	virtual void		sync(void) override;
 	virtual void		doSync(void);
-
-	virtual bool		serializeProperties(OSSerialize *s) const override;
 
 	virtual OSObject	*getProperty(const OSSymbol *aKey) const override;
 	virtual OSObject	*copyProperty(const OSSymbol *aKey) const override;
 	virtual OSObject	*getProperty(const char *aKey) const override;
 	virtual OSObject	*copyProperty(const char *aKey) const override;
 
-	virtual bool		setProperty(const OSSymbol *aKey, OSObject *anObject) override;
-	virtual void		removeProperty(const OSSymbol *aKey) override;
+	virtual IOReturn	syncOFVariables(void) override;
 	virtual IOReturn	setProperties(OSObject *properties) override;
-
 	virtual IOReturn	readXPRAM(IOByteCount offset, UInt8 *buffer, IOByteCount length) override;
 	virtual IOReturn	writeXPRAM(IOByteCount offset, UInt8 *buffer, IOByteCount length) override;
-
 	virtual IOReturn	readNVRAMProperty(IORegistryEntry *entry, const OSSymbol **name, OSData **value) override;
 	virtual IOReturn	writeNVRAMProperty(IORegistryEntry *entry, const OSSymbol *name, OSData *value) override;
+	virtual IOReturn	readNVRAMPartition(const OSSymbol *partitionID, IOByteCount offset, UInt8 *buffer, IOByteCount length) override;
+	virtual IOReturn	writeNVRAMPartition(const OSSymbol *partitionID, IOByteCount offset, UInt8 *buffer, IOByteCount length) override;
+	virtual IOReturn	setPowerState (unsigned long whichState, IOService * whatDevice) override;
 
 	virtual OSDictionary *getNVRAMPartitions(void) override;
 	
-	virtual IOReturn	readNVRAMPartition(const OSSymbol *partitionID, IOByteCount offset, UInt8 *buffer, IOByteCount length) override;
-
-	virtual IOReturn	writeNVRAMPartition(const OSSymbol *partitionID, IOByteCount offset, UInt8 *buffer, IOByteCount length) override;
-
 	virtual IOByteCount	savePanicInfo(UInt8 *buffer, IOByteCount length) override;
-	virtual bool		safeToSync(void) override;
-
-	IOReturn			setPowerState (unsigned long whichState, IOService * whatDevice) override;
 
 private:
 	static void			timeoutOccurred(OSObject *target, IOTimerEventSource* timer);
 
-	virtual void		registerNVRAM();
-	virtual void		setPath(OSString* path);
+	virtual void		registerNVRAM(void);
+
+	virtual IOReturn	read_buffer(char** buffer, uint64_t* length);
+	virtual IOReturn	write_buffer(char* buffer);
 
 	virtual OSObject	*cast(const OSSymbol* key, OSObject* obj);
 
@@ -148,8 +150,6 @@ private:
 	bool				mSafeToSync;
 
 	UInt8				mLoggingLevel;
-
-	vfs_context_t		mCtx;
 
 	OSDictionary		*mNvramMissDict;
 	IOCommandGate		*mCommandGate;
