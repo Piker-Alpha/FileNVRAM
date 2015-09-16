@@ -589,26 +589,25 @@ OSObject * FileNVRAM::copyProperty(const char *aKey) const
 bool FileNVRAM::setProperty(const OSSymbol *aKey, OSObject *anObject)
 {
 	// Verify permissions.
-	IOReturn result = IOUserClient::clientHasPrivilege(current_task(), kIOClientPrivilegeAdministrator);
-
-	if (result != kIOReturnSuccess)
+	if (IOUserClient::clientHasPrivilege(current_task(), kIOClientPrivilegeAdministrator) != kIOReturnSuccess)
 	{
 		return false;
 	}
-
+	
 	OSSerialize *s = OSSerialize::withCapacity(1000);
-
+	
 	if (anObject->serialize(s))
 	{
-
+		
 		LOG(INFO, "setProperty(%s, (%s) %s) called\n", aKey->getCStringNoCopy(), anObject->getMetaClass()->getClassName(), s->text());
 	}
 	else
 	{
 		LOG(INFO, "setProperty(%s, (%s) %p) called\n", aKey->getCStringNoCopy(), anObject->getMetaClass()->getClassName(), anObject);
 	}
+	
 	s->release();
-
+	
 	// Check for special FileNVRAM properties:
 	if (strncmp(FILE_NVRAM_GUID ":", aKey->getCStringNoCopy(), MIN(aKey->getLength(), strlen(FILE_NVRAM_GUID ":"))) == 0)
 	{
@@ -616,21 +615,21 @@ bool FileNVRAM::setProperty(const OSSymbol *aKey, OSObject *anObject)
 		// Found GUID
 		char* newKey = (char*)IOMalloc(bytes);
 		snprintf(newKey, bytes+1, "%s", &(aKey->getCStringNoCopy()[strlen(FILE_NVRAM_GUID ":")]));
-
+		
 		// Send d
 		OSString* str = OSString::withCString(newKey);
 		handleSetting(str, anObject, this);
 		str->release();
 		IOFree(newKey, bytes);
 	}
-
+	
 	bool stat = IOService::setProperty(aKey, cast(aKey, anObject));
-
+	
 	if (mInitComplete)
 	{
 		sync();
 	}
-
+	
 	return stat;
 }
 
