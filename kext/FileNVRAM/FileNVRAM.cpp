@@ -592,15 +592,18 @@ bool FileNVRAM::setProperty(const OSSymbol *aKey, OSObject *anObject)
 	// Verify permissions.
 	if (IOUserClient::clientHasPrivilege(current_task(), kIOClientPrivilegeAdministrator) != kIOReturnSuccess)
 	{
+		// Not priveleged!
 		return false;
 	}
 	
+	// Check for SIP configuration variables.
 	if ((strncmp("csr-data", aKey->getCStringNoCopy(), 8) == 0) || (strncmp("csr-active-config", aKey->getCStringNoCopy(), 17) == 0))
 	{
-		// Verify entitlements.
+		// We have a match so first verify the entitlements.
 		if (IOUserClient::copyClientEntitlement(current_task(), "com.apple.private.iokit.nvram-csr") == NULL)
 		{
 			LOG(INFO, "setProperty(%s, (%s) %p) failed (not entitled)\n", aKey->getCStringNoCopy(), anObject->getMetaClass()->getClassName(), anObject);
+			// Not entitled!
 			return false;
 		}
 	}
