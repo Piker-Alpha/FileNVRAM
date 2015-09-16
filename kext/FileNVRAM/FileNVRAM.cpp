@@ -17,6 +17,7 @@
  *			- Compiler warnings fixed (Pike R. Alpha, August 2015).
  *			- Moved read_buffer/write_buffer from FileIO.c to FileNVRAM.cpp (Pike R. Alpha, August 2015).
  *			- Removed FileIO.[c/h] and Support.h (Pike R. Alpha, August 2015).
+ *			- Add entitlement check (Pike R. Alpha September 2015).
  */
 
 #include "FileNVRAM.h"
@@ -592,6 +593,16 @@ bool FileNVRAM::setProperty(const OSSymbol *aKey, OSObject *anObject)
 	if (IOUserClient::clientHasPrivilege(current_task(), kIOClientPrivilegeAdministrator) != kIOReturnSuccess)
 	{
 		return false;
+	}
+	
+	if ((strncmp("csr-data", aKey->getCStringNoCopy(), 8) == 0) || (strncmp("csr-active-config", aKey->getCStringNoCopy(), 17) == 0))
+	{
+		// Verify entitlements.
+		if (IOUserClient::copyClientEntitlement(current_task(), "com.apple.private.iokit.nvram-csr") == NULL)
+		{
+			LOG(INFO, "setProperty(%s, (%s) %p) failed (not entitled)\n", aKey->getCStringNoCopy(), anObject->getMetaClass()->getClassName(), anObject);
+			return false;
+		}
 	}
 	
 	OSSerialize *s = OSSerialize::withCapacity(1000);
