@@ -139,8 +139,8 @@ private:
 
 	virtual void		registerNVRAM(void);
 
-	virtual IOReturn	read_buffer(char** buffer, uint64_t* length);
-	virtual IOReturn	write_buffer(char* buffer);
+	virtual IOReturn	read_buffer(char** aBuffer, uint64_t* aLength, vfs_context_t aCtx);
+	virtual IOReturn	write_buffer(char* aBuffer, vfs_context_t aCtx);
 
 	virtual OSObject	*cast(const OSSymbol* key, OSObject* obj);
 
@@ -150,6 +150,8 @@ private:
 	bool				mSafeToSync;
 
 	UInt8				mLoggingLevel;
+
+    vfs_context_t		mCtx;
 
 	OSDictionary		*mNvramMissDict;
 	IOCommandGate		*mCommandGate;
